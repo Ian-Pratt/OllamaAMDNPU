@@ -23,19 +23,21 @@ find_library(XRT_DRIVER_XDNA_LIB
 if (NOT XRT_DRIVER_XDNA_LIB)
     find_file(XRT_DRIVER_XDNA_LIB
         NAMES libxrt_driver_xdna.so.2
-        HINTS /usr/lib /usr/local/lib)
+        HINTS /usr/lib /usr/local/lib $ENV{XILINX_XRT}/lib)
 endif()
 
 find_library(XRT_CPP_LIB
     NAMES xrt++
     HINTS /usr/lib /usr/local/lib $ENV{XILINX_XRT}/lib)
 
-if (XRT_INCLUDE_DIR AND XRT_CORE_LIB AND XRT_COREUTIL_LIB AND XRT_CPP_LIB AND XRT_DRIVER_XDNA_LIB)
+if (XRT_INCLUDE_DIR AND XRT_CORE_LIB AND XRT_COREUTIL_LIB AND XRT_DRIVER_XDNA_LIB)
     set(XRT_LIBRARIES
-        ${XRT_CPP_LIB}
         ${XRT_CORE_LIB}
         ${XRT_COREUTIL_LIB}
         ${XRT_DRIVER_XDNA_LIB})
+    if (XRT_CPP_LIB)
+        list(PREPEND XRT_LIBRARIES ${XRT_CPP_LIB})
+    endif()
 
     message(STATUS "XRT found — building ggml-xdna backend")
     message(STATUS "  Includes : ${XRT_INCLUDE_DIR}")

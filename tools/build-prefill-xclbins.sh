@@ -12,6 +12,7 @@
 #
 # Options:
 #   --output-dir DIR    Destination dir (default: ~/xclbin-prefill)
+#   --staging-dir DIR   Temporary staging dir (default: ~/xclbin-prefill-staging)
 #   --tile-m N          Override TILE_M (default: 128)
 #   --tile-n N          Override TILE_N (default: 128); INNER_N derived as N/4
 #   --k-values "A B C"  Space-separated K values (default: "2048 4096 5632 14336")
@@ -39,13 +40,14 @@ DRY_RUN=0
 SKIP_BUILD=0
 
 MLIR_AIE_DIR="${MLIR_AIE_DIR:-$HOME/Claude/OllamaAMD/mlir-aie}"
-VENV_DIR="$HOME/Claude/OllamaAMD/mlir-aie-env"
+VENV_DIR="${MLIR_AIE_VENV_DIR:-$HOME/Claude/OllamaAMD/mlir-aie-env}"
 WHOLE_ARRAY_DIR="$MLIR_AIE_DIR/programming_examples/basic/matrix_multiplication/whole_array"
 
 # ── Argument parsing ─────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case $1 in
         --output-dir)   OUTPUT_DIR="$2";       shift 2 ;;
+        --staging-dir)  STAGING_DIR="$2";     shift 2 ;;
         --tile-m)       TILE_M="$2";           shift 2 ;;
         --tile-n)       TILE_N="$2";           shift 2 ;;
         --k-values)     read -ra K_VALUES <<< "$2";
@@ -108,6 +110,7 @@ if [[ $DRY_RUN -eq 0 && $SKIP_BUILD -eq 0 ]]; then
         fi
     fi
     export PEANO_INSTALL_DIR
+    export CPLUS_INCLUDE_PATH="$MLIR_AIE_DIR/third_party/aie_api/include:$MLIR_AIE_DIR/include:${CPLUS_INCLUDE_PATH:-}"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
@@ -173,6 +176,7 @@ for K in "${K_VALUES[@]}"; do
     (
         cd "$WHOLE_ARRAY_DIR"
         make all \
+            dtype_in=i8 dtype_out=i32 \
             M="$TILE_M" K="$K" N="$TILE_N" \
             m="$INNER_M" k="$INNER_K" n="$INNER_N" \
             n_aie_cols="$N_AIE_COLS" \
